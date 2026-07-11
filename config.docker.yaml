@@ -1,0 +1,63 @@
+# 容器内配置：向量库用 Qdrant service，数据源指向挂载的 /data/media。
+# 覆盖点相对 config.yaml：vector_store.backend=qdrant，qdrant.host=qdrant。
+
+embedding:
+  backend: "chinese_clip"       # 换 siglip 只需改这里 + model_name
+  model_name: "ViT-B-16"
+  device: "cpu"
+  batch_size: 32
+  model_cache_dir: "/app/models"
+
+vector_store:
+  backend: "qdrant"
+  qdrant:
+    host: "qdrant"              # docker-compose service 名
+    port: 6333
+    grpc_port: 6334
+    prefer_grpc: true
+    collection_name: "media_embeddings"
+    hnsw_m: 16
+    hnsw_ef_construct: 200
+
+data_sources:
+  - path: "/data/media/images"
+    media_types: ["image"]
+    recursive: true
+  - path: "/data/media/videos"
+    media_types: ["video"]
+    recursive: true
+  - path: "/data/media/audio"
+    media_types: ["audio"]
+    recursive: true
+  - path: "/data/media/text"
+    media_types: ["text"]
+    recursive: true
+
+video:
+  frame_interval_seconds: 2.0
+  max_frames_per_video: 500
+  thumbnail_size: [336, 336]
+
+audio:
+  whisper_model: "base"
+  language: "zh"
+
+text:
+  chunk_chars: 200
+  chunk_overlap: 20
+
+indexing:
+  state_db_path: "/app/data/index_state.db"
+  stats_path: "/app/data/index_stats.json"
+  hash_algorithm: "xxhash"
+
+search:
+  default_top_k: 20
+
+api:
+  host: "0.0.0.0"
+  port: 8900
+  serve_files: true
+
+logging:
+  level: "INFO"

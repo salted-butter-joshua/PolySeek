@@ -1,0 +1,56 @@
+# syntax=docker/dockerfile:1
+# GPU 镜像（RTX 2080 / Turing）。torch 的 CUDA wheels 自带 CUDA runtime，
+# 宿主机只需 NVIDIA 驱动 + nvidia-container-toolkit。
+# 国内加速：apt / pip / torch 均走镜像源，可用 build-arg 覆盖。
+#   docker compose -f docker-compose.gpu.yaml build   （已在 compose 里传好 build args）
+# 换官方源：--build-arg APT_MIRROR=deb.debian.org --build-arg PIP_INDEX=https://pypi.org/simple
+
+FROM python:3.11-slim AS base
+
+# 镜像源（默认清华，最稳）。清华 PyPI 的 torch wheel 本身就是 CUDA 构建（当前为 cu12x），
+# RTX 2080 兼容，只需宿主机 NVIDIA 驱动 >= 525。
+# 若想精确锁 cu121，把 TORCH_INDEX 改成交大镜像：https://mirror.sjtu.edu.cn/pytorch-wheels/cu121
+ARG APT_MIRROR=mirrors.tuna.tsinghua.edu.cn
+ARG PIP_INDEX=https://pypi.tuna.tsinghua.edu.cn/simple
+ARG TORCH_INDEX=https://pypi.tuna.tsinghua.edu.cn/simple
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_INDEX_URL=${PIP_INDEX} \
+    HF_HOME=/app/models \
+    HF_ENDPOINT=https://hf-mirror.com \
+    MEDIA_MIND_CONFIG=/app/config.docker.yaml \
+    MEDIA_MIND__EMBEDDING__DEVICE=cuda
+
+# apt 换国内镜像（兼容 deb822 新格式与老 sources.list），再装 ffmpeg
+RUN set -eux; \
+    if [ -f /etc/apt/sources.list.d/debian.sources ]; then \
+      sed -i "s|deb.debian.org|${APT_MIRROR}|g; s|security.debian.org|${APT_MIRROR}|g" /etc/apt/sources.list.d/debian.sources; \
+    fi; \
+    if [ -f /etc/apt/sources.list ]; then \
+      sed -i "s|deb.debian.org|${APT_MIRROR}|g; s|security.debian.org|${APT_MIRROR}|g" /etc/apt/sources.list; \
+    fi; \
+    apt-get update && apt-get install -y --no-install-recommends \
+        ffmpeg git patch build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY pyproject.toml README.md ./
+COPY media_mind ./media_mind
+
+# torch/torchvision（CUDA 构建）+ 项目依赖 + Chinese-CLIP，全部走国内镜像
+RUN pip install --index-url ${TORCH_INDEX} torch torchvision \
+    && pip install ".[siglip,audio,webui]" \
+    && pip install cn-clip
+
+COPY config.docker.yaml ./
+COPY scripts ./scripts
+
+RUN mkdir -p /app/data /app/models
+
+EXPOSE 8900 7860
+
+CMD ["uvicorn", "media_mind.api.server:app", "--host", "0.0.0.0", "--port", "8900"]

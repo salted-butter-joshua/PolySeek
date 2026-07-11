@@ -1,0 +1,105 @@
+# GPU 部署（RTX 2080 Ubuntu 服务器）：Qdrant + GPU 版 API / indexer / webui。
+#
+# 前置：安装 NVIDIA 驱动 + nvidia-container-toolkit
+#   sudo apt install nvidia-container-toolkit && sudo systemctl restart docker
+#   验证：docker run --rm --gpus all nvidia/cuda:12.1.0-base-ubuntu22.04 nvidia-smi
+#
+# 用法：
+#   docker compose -f docker-compose.gpu.yaml up -d qdrant api
+#   docker compose -f docker-compose.gpu.yaml run --rm indexer      # 跑一次索引
+#   docker compose -f docker-compose.gpu.yaml up -d webui           # http://<ip>:7860
+
+x-gpu: &gpu
+  deploy:
+    resources:
+      reservations:
+        devices:
+          - driver: nvidia
+            count: 1
+            capabilities: [gpu]
+
+# 构建配置（含国内镜像源 build-args）。换官方源改这里即可。
+x-build: &build
+  context: .
+  dockerfile: Dockerfile.gpu
+  args:
+    APT_MIRROR: mirrors.tuna.tsinghua.edu.cn
+    PIP_INDEX: https://pypi.tuna.tsinghua.edu.cn/simple
+    # 清华 PyPI 的 torch 即 CUDA 构建；要锁 cu121 改为 https://mirror.sjtu.edu.cn/pytorch-wheels/cu121
+    TORCH_INDEX: https://pypi.tuna.tsinghua.edu.cn/simple
+
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.11.0
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_storage:/qdrant/storage
+    healthcheck:
+      test: ["CMD", "sh", "-c", "wget -qO- http://localhost:6333/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: *build
+    <<: *gpu
+    restart: unless-stopped
+    depends_on:
+      qdrant:
+        condition: service_healthy
+    ports:
+      - "8900:8900"
+    environment:
+      MEDIA_MIND_CONFIG: /app/config.docker.yaml
+      MEDIA_MIND__EMBEDDING__DEVICE: cuda
+      NVIDIA_VISIBLE_DEVICES: all
+    volumes:
+      - ./config.docker.yaml:/app/config.docker.yaml:ro
+      - model_cache:/app/models
+      - index_state:/app/data
+      - ./sample_data:/data/media:ro
+
+  indexer:
+    build: *build
+    <<: *gpu
+    depends_on:
+      qdrant:
+        condition: service_healthy
+    environment:
+      MEDIA_MIND_CONFIG: /app/config.docker.yaml
+      MEDIA_MIND__EMBEDDING__DEVICE: cuda
+      NVIDIA_VISIBLE_DEVICES: all
+    volumes:
+      - ./config.docker.yaml:/app/config.docker.yaml:ro
+      - model_cache:/app/models
+      - index_state:/app/data
+      - ./sample_data:/data/media:ro
+    command: ["python", "scripts/index_incremental.py", "-c", "/app/config.docker.yaml"]
+
+  webui:
+    build: *build
+    <<: *gpu
+    restart: unless-stopped
+    depends_on:
+      qdrant:
+        condition: service_healthy
+    ports:
+      - "7860:7860"
+    environment:
+      MEDIA_MIND_CONFIG: /app/config.docker.yaml
+      MEDIA_MIND__EMBEDDING__DEVICE: cuda
+      NVIDIA_VISIBLE_DEVICES: all
+    volumes:
+      - ./config.docker.yaml:/app/config.docker.yaml:ro
+      - model_cache:/app/models
+      - index_state:/app/data
+      - ./sample_data:/data/media:ro
+    command: ["python", "-m", "media_mind.webui.app"]
+
+volumes:
+  qdrant_storage:
+  model_cache:
+  index_state:

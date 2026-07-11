@@ -1,0 +1,130 @@
+# ============================================================================
+# media-mind 全局配置
+# 所有字段都有对应的 pydantic 模型（media_mind/config.py），加载时会做校验。
+# 支持用环境变量覆盖，前缀 MEDIA_MIND__，双下划线表示嵌套，例如：
+#   MEDIA_MIND__EMBEDDING__DEVICE=cuda
+#   MEDIA_MIND__VECTOR_STORE__BACKEND=qdrant
+# ============================================================================
+
+# ---------------------------------------------------------------------------
+# Embedding 模型
+# ---------------------------------------------------------------------------
+embedding:
+  backend: "chinese_clip"          # chinese_clip | siglip | openai_clip
+  model_name: "ViT-B-16"           # 见各后端支持的 model_name
+  device: "cpu"                    # cpu | cuda | mps
+  batch_size: 32                   # 批量编码的 batch 大小
+  model_cache_dir: "./models"      # 模型权重缓存目录
+  # dimension 由模型决定，无需手填；留空则自动探测
+
+# ---------------------------------------------------------------------------
+# 向量数据库
+# ---------------------------------------------------------------------------
+vector_store:
+  backend: "milvus_lite"           # milvus_lite | qdrant
+
+  milvus:
+    db_path: "./data/milvus.db"
+    collection_name: "media_embeddings"
+    index_type: "HNSW"             # FLAT | IVF_FLAT | HNSW
+    metric_type: "COSINE"          # COSINE | IP | L2
+    hnsw_m: 16
+    hnsw_ef_construction: 200
+    ivf_nlist: 128
+
+  qdrant:
+    host: "localhost"
+    port: 6333
+    grpc_port: 6334
+    prefer_grpc: true
+    api_key: null                  # 云端 Qdrant 才需要
+    collection_name: "media_embeddings"
+    hnsw_m: 16
+    hnsw_ef_construct: 200
+
+# ---------------------------------------------------------------------------
+# NAS 数据源
+# ---------------------------------------------------------------------------
+data_sources:
+  - path: "./sample_data/images"
+    media_types: ["image"]
+    recursive: true
+  - path: "./sample_data/videos"
+    media_types: ["video"]
+    recursive: true
+  - path: "./sample_data/audio"
+    media_types: ["audio"]
+    recursive: true
+  - path: "./sample_data/text"
+    media_types: ["text"]
+    recursive: true
+
+# ---------------------------------------------------------------------------
+# 图片处理
+# ---------------------------------------------------------------------------
+image:
+  supported_formats: [".jpg", ".jpeg", ".png", ".webp", ".heic", ".bmp", ".tiff"]
+  max_dimension: 1024
+
+# ---------------------------------------------------------------------------
+# 视频处理
+# ---------------------------------------------------------------------------
+video:
+  supported_formats: [".mp4", ".mov", ".mkv", ".avi", ".webm"]
+  frame_interval_seconds: 2.0
+  max_frames_per_video: 500
+  thumbnail_size: [336, 336]
+  ffmpeg_path: "ffmpeg"
+  ffprobe_path: "ffprobe"
+
+# ---------------------------------------------------------------------------
+# 音频处理
+# ---------------------------------------------------------------------------
+audio:
+  supported_formats: [".mp3", ".flac", ".wav", ".m4a", ".ogg", ".aac"]
+  whisper_model: "base"            # tiny | base | small | medium | large
+  language: "zh"
+  min_segment_chars: 2
+
+# ---------------------------------------------------------------------------
+# 文本文档处理（文搜文）
+# ---------------------------------------------------------------------------
+text:
+  supported_formats: [".txt", ".md", ".markdown"]
+  chunk_chars: 200                 # 每块最大字符数（受 CLIP 文本 token 上限约束）
+  chunk_overlap: 20
+  min_chunk_chars: 4
+  encoding: "utf-8"
+
+# ---------------------------------------------------------------------------
+# 增量索引
+# ---------------------------------------------------------------------------
+indexing:
+  state_db_path: "./data/index_state.db"
+  stats_path: "./data/index_stats.json"   # 离线嵌入耗时统计
+  hash_algorithm: "xxhash"         # xxhash | md5 | sha256
+  large_file_threshold_mb: 100     # 超过则用采样 hash
+  workers: 4
+
+# ---------------------------------------------------------------------------
+# 检索
+# ---------------------------------------------------------------------------
+search:
+  default_top_k: 20
+  hybrid_overfetch: 2              # 混合搜索时超量取回倍数（用于去重）
+
+# ---------------------------------------------------------------------------
+# API
+# ---------------------------------------------------------------------------
+api:
+  host: "0.0.0.0"
+  port: 8900
+  cors_origins: ["*"]
+  serve_files: true                # 是否允许 /api/file 直接读磁盘文件
+
+# ---------------------------------------------------------------------------
+# 日志
+# ---------------------------------------------------------------------------
+logging:
+  level: "INFO"                    # DEBUG | INFO | WARNING | ERROR
+  file: null                       # 留空则只输出到 stderr

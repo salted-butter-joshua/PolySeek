@@ -1,0 +1,101 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "polyseek"
+version = "0.1.0"
+description = "PolySeek —— 自托管多模态语义检索引擎：文搜文 / 文搜图 / 图搜图 / 文搜视频 / 文搜音频"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "PolySeek" }]
+keywords = ["clip", "siglip", "multimodal", "retrieval", "vector-search", "nas", "semantic-search"]
+
+dependencies = [
+    # Core
+    "pyyaml>=6.0",
+    "pydantic>=2.5",
+    "pydantic-settings>=2.1",
+    "numpy>=1.24,<2.0",
+
+    # Embedding backends 的公共依赖
+    "torch>=2.0",
+    "torchvision>=0.15",
+    "Pillow>=10.0",
+
+    # Vector databases
+    "pymilvus>=2.4",          # Milvus Lite（Linux/macOS）
+    "qdrant-client>=1.9",     # Qdrant
+
+    # Incremental indexing
+    "xxhash>=3.4",
+
+    # CLI
+    "typer>=0.9",
+    "rich>=13.7",
+
+    # API
+    "fastapi>=0.109",
+    "uvicorn[standard]>=0.27",
+    "python-multipart>=0.0.9",
+
+    # Utilities
+    "tqdm>=4.66",
+    "loguru>=0.7",
+]
+
+[project.optional-dependencies]
+# Chinese-CLIP 后端
+chinese-clip = ["cn-clip>=1.5"]
+# SigLIP 2 / OpenAI CLIP (HF) 后端
+siglip = ["transformers>=4.40", "sentencepiece>=0.2", "protobuf>=4.25"]
+# 音频转写
+audio = ["openai-whisper>=20231117", "ffmpeg-python>=0.2"]
+# ONNX 加速
+onnx = ["onnx>=1.15", "onnxruntime>=1.17"]
+# Gradio Web UI
+webui = ["gradio>=4.20"]
+# 开发 / 测试
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "httpx>=0.27",
+    "ruff>=0.3",
+    "mypy>=1.9",
+]
+# 一次性装全（不含各家 CLIP 具体权重库，按需选装）
+all = [
+    "polyseek[siglip,audio,onnx,webui,dev]",
+]
+
+[project.scripts]
+polyseek = "media_mind.cli.main:app"
+media-mind = "media_mind.cli.main:app"   # 兼容旧命令名
+
+[project.urls]
+Homepage = "https://github.com/your-org/polyseek"
+Repository = "https://github.com/your-org/polyseek"
+Issues = "https://github.com/your-org/polyseek/issues"
+
+[tool.setuptools.packages.find]
+include = ["media_mind*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "-ra -q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP", "B"]
+# E501: 行长交给 formatter；B008: FastAPI 的 Query/File/Depends 默认值是官方惯用法
+ignore = ["E501", "B008"]
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+warn_unused_ignores = true
