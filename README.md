@@ -7,7 +7,7 @@
 
 *One space for every modality — search your media by meaning, not filenames.*
 
-[![CI](https://github.com/your-org/polyseek/actions/workflows/ci.yml/badge.svg)](https://github.com/your-org/polyseek/actions/workflows/ci.yml)
+[![CI](https://github.com/salted-butter-joshua/PolySeek/actions/workflows/ci.yml/badge.svg)](https://github.com/salted-butter-joshua/PolySeek/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Code style: ruff](https://img.shields.io/badge/lint-ruff-orange.svg)](https://github.com/astral-sh/ruff)
@@ -47,7 +47,7 @@ PolySeek 把图片、视频关键帧、音频转写、文本文档统一编码�
 #### CPU（跨平台，含 Windows）
 
 ```bash
-git clone https://github.com/your-org/polyseek.git && cd polyseek
+git clone https://github.com/salted-butter-joshua/PolySeek.git && cd PolySeek
 # 把媒体放到 ./sample_data/{images,videos,audio,text}（或改 config.docker.yaml）
 docker compose up -d qdrant api          # 起向量库 + API
 docker compose run --rm indexer          # 跑一次索引
