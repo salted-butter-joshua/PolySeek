@@ -92,6 +92,10 @@ class QdrantStore(VectorStore):
         top_k: int = 20,
         filters: SearchFilter | None = None,
     ) -> list[SearchResult]:
+        # 未建 collection（尚未索引）时返回空，避免读服务直接 500
+        if not self.client.collection_exists(self.collection_name):
+            return []
+
         qfilter = self._build_filter(filters)
         hits = self.client.query_points(
             collection_name=self.collection_name,

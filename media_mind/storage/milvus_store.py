@@ -112,6 +112,10 @@ class MilvusLiteStore(VectorStore):
         top_k: int = 20,
         filters: SearchFilter | None = None,
     ) -> list[SearchResult]:
+        # 未建 collection（尚未索引）时返回空，避免读服务直接报错
+        if not self.client.has_collection(self.collection_name):
+            return []
+
         filter_expr = self._build_filter_expr(filters)
 
         params: dict = {}
