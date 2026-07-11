@@ -227,6 +227,16 @@ polyseek/
 
 索引选型：`<10万` 用 FLAT（recall 100%），`10~100万` 用 HNSW（recall ~98%，快 10x），`>100万` 用 IVF。
 
+**真实基准（RTX 2080）** 见 [docs/benchmark.md](docs/benchmark.md)，可一键复现：
+
+```bash
+make data                 # 生成合成数据
+make index-full           # 建索引（记录分类型离线嵌入耗时）
+make eval                 # 生成 100 条评测用例
+make bench                # 单后端 → 写入 docs/benchmark.md（Recall@K/MRR/延迟 p50/p95）
+make compare              # 多后端对比（Chinese-CLIP vs SigLIP）→ 写入 docs/benchmark.md
+```
+
 ## 🛠️ 开发
 
 ```bash

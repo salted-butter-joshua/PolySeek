@@ -45,6 +45,7 @@ def run(engine, cases: list[dict], top_k: int) -> dict:
     )
     overall = {"hits": {1: 0, 5: 0, 10: 0}, "rr": 0.0, "n": 0,
                "embed_ms": 0.0, "search_ms": 0.0}
+    latencies: list[float] = []  # 每条 query 的总耗时（embed+search，ms）
 
     limit = max(top_k, 10)
     for case in cases:
@@ -60,6 +61,7 @@ def run(engine, cases: list[dict], top_k: int) -> dict:
             continue
 
         ranked = [concept_of(r.file_path) for r in ts.results]
+        latencies.append(ts.total_ms)
 
         for bucket in (per_mode[mode], overall):
             bucket["n"] += 1
@@ -80,8 +82,12 @@ def run(engine, cases: list[dict], top_k: int) -> dict:
                   "avg_search_ms": b["search_ms"] / max(1, b["n"])})
         report["per_mode"][mode] = m
     o = _metrics(overall["hits"], overall["rr"], overall["n"])
+    lat = sorted(latencies)
+    def _pct(p: float) -> float:
+        return lat[min(len(lat) - 1, int(len(lat) * p))] if lat else 0.0
     o.update({"n": overall["n"], "avg_embed_ms": overall["embed_ms"] / max(1, overall["n"]),
-              "avg_search_ms": overall["search_ms"] / max(1, overall["n"])})
+              "avg_search_ms": overall["search_ms"] / max(1, overall["n"]),
+              "latency_p50_ms": _pct(0.50), "latency_p95_ms": _pct(0.95)})
     report["overall"] = o
     return report
 
@@ -100,6 +106,7 @@ def _print(report: dict, cfg) -> None:
     print("-" * len(header))
     print(f"{'OVERALL':<12}{o['n']:>4}{o['recall@1']:>8.3f}{o['recall@5']:>8.3f}"
           f"{o['recall@10']:>8.3f}{o['mrr']:>8.3f}{o['avg_embed_ms']:>10.2f}{o['avg_search_ms']:>10.2f}")
+    print(f"query 延迟 p50={o.get('latency_p50_ms', 0):.2f} ms  p95={o.get('latency_p95_ms', 0):.2f} ms")
 
 
 def main() -> None:
@@ -120,6 +127,15 @@ def main() -> None:
     finally:
         ctx.close()
 
+    # 记录本次实验的配置，供报告/对比使用
+    report["config"] = {
+        "backend": cfg.embedding.backend,
+        "model_name": cfg.embedding.model_name,
+        "device": cfg.embedding.device,
+        "vector_store": cfg.vector_store.backend,
+        "dimension": ctx.embedding.dimension,
+        "top_k": args.top_k,
+    }
     _print(report, cfg)
     if args.json:
         Path(args.json).parent.mkdir(parents=True, exist_ok=True)

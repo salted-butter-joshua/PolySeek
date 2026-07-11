@@ -1,5 +1,7 @@
 .PHONY: help install install-dev lint test index index-full search serve ui \
-        data eval run-eval docker-up docker-index gpu-up gpu-index clean
+        data eval run-eval bench compare docker-up docker-index gpu-up gpu-index clean
+
+CONFIG ?= config.yaml
 
 help:
 	@echo "make install       安装运行依赖（不含具体 CLIP 权重库，按需装 extras）"
@@ -46,6 +48,15 @@ eval:
 
 run-eval:
 	python scripts/run_eval.py --eval eval/dataset.json --top-k 10 --json eval/report.json
+
+# ③ 单后端 benchmark → 生成 docs/benchmark.md
+bench:
+	python scripts/run_eval.py --eval eval/dataset.json --top-k 10 -c $(CONFIG) --json eval/report.json
+	python scripts/report_to_markdown.py --stats data/index_stats.json --report eval/report.json --out docs/benchmark.md
+
+# ④ 多后端对比（Chinese-CLIP vs SigLIP）→ 生成 docs/benchmark.md
+compare:
+	bash scripts/compare_backends.sh $(CONFIG)
 
 docker-up:
 	docker compose up -d qdrant api
