@@ -30,7 +30,7 @@ class OpenAIClipEmbedding(EmbeddingService):
             from transformers import CLIPModel, CLIPProcessor
         except ImportError as e:  # pragma: no cover
             raise ImportError(
-                "缺少 transformers，请安装：pip install 'media-mind[siglip]'"
+                "缺少 transformers，请安装：pip install 'polyseek[siglip]'"
             ) from e
 
         logger.info("Loading OpenAI CLIP {} on {} ...", model_name, device)

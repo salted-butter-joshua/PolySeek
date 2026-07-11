@@ -21,7 +21,7 @@
 
 1. 非法配置在加载阶段即报错（fail-fast），而非运行中途。
 2. 上层拿到强类型对象，IDE 有补全，重构安全。
-3. 容器部署用 `MEDIA_MIND__EMBEDDING__DEVICE=cuda` 覆盖，无需改文件。
+3. 容器部署用 `POLYSEEK__EMBEDDING__DEVICE=cuda` 覆盖，无需改文件。
 
 ## 后果
 

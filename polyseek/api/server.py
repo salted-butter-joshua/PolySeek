@@ -45,7 +45,7 @@ def _require_ctx() -> AppContext:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global _ctx
-    config_path = os.environ.get("MEDIA_MIND_CONFIG", "config.yaml")
+    config_path = os.environ.get("POLYSEEK_CONFIG", "config.yaml")
     cfg = load_config(config_path)
     setup_logging(cfg.logging)
     _ctx = build_search_context(cfg, ensure_collection=False)
@@ -57,7 +57,7 @@ async def lifespan(app: FastAPI):
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="media-mind API", version=__version__, lifespan=lifespan)
+    app = FastAPI(title="polyseek API", version=__version__, lifespan=lifespan)
 
     # CORS（origins 在 lifespan 前无法读 config，这里放开由反代收敛；如需精细控制可改）
     app.add_middleware(

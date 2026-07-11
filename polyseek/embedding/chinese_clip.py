@@ -43,7 +43,7 @@ class ChineseClipEmbedding(EmbeddingService):
             from cn_clip.clip import load_from_name
         except ImportError as e:  # pragma: no cover
             raise ImportError(
-                "缺少 cn-clip，请安装：pip install 'media-mind[chinese-clip]' "
+                "缺少 cn-clip，请安装：pip install 'polyseek[chinese-clip]' "
                 "或 pip install cn-clip"
             ) from e
 

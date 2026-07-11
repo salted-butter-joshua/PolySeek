@@ -7,7 +7,7 @@ import textwrap
 import pytest
 from pydantic import ValidationError
 
-from media_mind.config import AppConfig, load_config
+from polyseek.config import AppConfig, load_config
 
 
 def test_defaults():
@@ -41,7 +41,7 @@ def test_load_from_yaml(tmp_path):
 def test_env_override(tmp_path, monkeypatch):
     p = tmp_path / "config.yaml"
     p.write_text("embedding:\n  device: cpu\n", encoding="utf-8")
-    monkeypatch.setenv("MEDIA_MIND__EMBEDDING__DEVICE", "cuda")
+    monkeypatch.setenv("POLYSEEK__EMBEDDING__DEVICE", "cuda")
     cfg = load_config(p)
     assert cfg.embedding.device == "cuda"
 

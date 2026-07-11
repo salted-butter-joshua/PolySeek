@@ -1,9 +1,9 @@
 # ============================================================================
-# media-mind 全局配置
-# 所有字段都有对应的 pydantic 模型（media_mind/config.py），加载时会做校验。
-# 支持用环境变量覆盖，前缀 MEDIA_MIND__，双下划线表示嵌套，例如：
-#   MEDIA_MIND__EMBEDDING__DEVICE=cuda
-#   MEDIA_MIND__VECTOR_STORE__BACKEND=qdrant
+# polyseek 全局配置
+# 所有字段都有对应的 pydantic 模型（polyseek/config.py），加载时会做校验。
+# 支持用环境变量覆盖，前缀 POLYSEEK__，双下划线表示嵌套，例如：
+#   POLYSEEK__EMBEDDING__DEVICE=cuda
+#   POLYSEEK__VECTOR_STORE__BACKEND=qdrant
 # ============================================================================
 
 # ---------------------------------------------------------------------------

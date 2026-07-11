@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from media_mind.search import SearchEngine
+from polyseek.search import SearchEngine
 
 
 def _seed_store(store, embedding):

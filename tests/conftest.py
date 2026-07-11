@@ -8,8 +8,8 @@ import uuid
 import numpy as np
 import pytest
 
-from media_mind.embedding.base import EmbeddingService, ImageInput
-from media_mind.storage.base import SearchFilter, SearchResult, VectorStore
+from polyseek.embedding.base import EmbeddingService, ImageInput
+from polyseek.storage.base import SearchFilter, SearchResult, VectorStore
 
 
 class FakeEmbedding(EmbeddingService):

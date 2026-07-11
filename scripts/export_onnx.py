@@ -50,7 +50,7 @@ def main() -> None:
         out = sess.run(None, {"image": dummy.cpu().numpy()})
         print(f"ONNX runtime OK, output shape: {out[0].shape}")
     except ImportError:
-        print("onnxruntime 未安装，跳过校验（pip install 'media-mind[onnx]'）")
+        print("onnxruntime 未安装，跳过校验（pip install 'polyseek[onnx]'）")
 
 
 if __name__ == "__main__":

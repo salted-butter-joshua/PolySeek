@@ -3,7 +3,7 @@
 设计要点：
 - 所有配置字段都有 pydantic 模型，加载 YAML 时立即校验，非法配置在启动阶段
   就报错，而不是等到运行中途才崩。
-- 支持环境变量覆盖（前缀 ``MEDIA_MIND__``，双下划线表示嵌套），方便容器化部署。
+- 支持环境变量覆盖（前缀 ``POLYSEEK__``，双下划线表示嵌套），方便容器化部署。
 - 上层模块只依赖强类型对象（``AppConfig`` 及其子模型），不再传裸 dict，IDE 有补全，
   重构安全。
 """
@@ -150,11 +150,11 @@ class AppConfig(BaseSettings):
     """应用全局配置。
 
     优先级：环境变量 > YAML 文件 > 字段默认值。
-    环境变量覆盖示例：``MEDIA_MIND__EMBEDDING__DEVICE=cuda``。
+    环境变量覆盖示例：``POLYSEEK__EMBEDDING__DEVICE=cuda``。
     """
 
     model_config = SettingsConfigDict(
-        env_prefix="MEDIA_MIND__",
+        env_prefix="POLYSEEK__",
         env_nested_delimiter="__",
         extra="ignore",
     )

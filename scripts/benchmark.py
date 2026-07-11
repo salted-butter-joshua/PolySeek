@@ -19,9 +19,9 @@ import json
 import time
 from pathlib import Path
 
-from media_mind.config import load_config
-from media_mind.context import build_search_context
-from media_mind.logging_setup import setup_logging
+from polyseek.config import load_config
+from polyseek.context import build_search_context
+from polyseek.logging_setup import setup_logging
 
 
 def evaluate(engine, eval_items: list[dict], top_k: int, media_type: str | None) -> dict:

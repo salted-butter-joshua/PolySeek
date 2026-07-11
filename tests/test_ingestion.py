@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from PIL import Image
 
-from media_mind.config import AppConfig, DataSource, IndexingConfig
-from media_mind.ingestion.pipeline import IngestionPipeline
-from media_mind.ingestion.scanner import FileScanner
+from polyseek.config import AppConfig, DataSource, IndexingConfig
+from polyseek.ingestion.pipeline import IngestionPipeline
+from polyseek.ingestion.scanner import FileScanner
 
 
 def _make_images(dirpath, n=3):

@@ -32,7 +32,7 @@ class AudioProcessor:
                 import whisper
             except ImportError as e:  # pragma: no cover
                 raise ImportError(
-                    "缺少 openai-whisper，请安装：pip install 'media-mind[audio]'"
+                    "缺少 openai-whisper，请安装：pip install 'polyseek[audio]'"
                 ) from e
             logger.info("Loading Whisper model: {} ...", self.model_name)
             self._model = whisper.load_model(self.model_name)

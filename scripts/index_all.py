@@ -1,13 +1,13 @@
 #!/usr/bin/env python
-"""全量索引脚本：等价于 `media-mind index --full`，方便 cron / systemd 直接调用。"""
+"""全量索引脚本：等价于 `polyseek index --full`，方便 cron / systemd 直接调用。"""
 
 from __future__ import annotations
 
 import argparse
 
-from media_mind.config import load_config
-from media_mind.context import build_pipeline, build_search_context
-from media_mind.logging_setup import setup_logging
+from polyseek.config import load_config
+from polyseek.context import build_pipeline, build_search_context
+from polyseek.logging_setup import setup_logging
 
 
 def main() -> None:

@@ -5,7 +5,7 @@
 - 四种检索：文搜文、文搜图、图搜图、混合；实时展示 query 编码耗时 / 向量检索耗时 / 总耗时
 - 离线嵌入统计面板：文本/图片/视频/音频分开的嵌入总时长、文件数、向量数、吞吐
 
-启动：python -m media_mind.webui.app
+启动：python -m polyseek.webui.app
 """
 
 from __future__ import annotations
@@ -153,8 +153,8 @@ def build_ui(config_path: str = "config.yaml"):
     setup_logging(cfg.logging)
     _STATE["base_config"] = cfg
 
-    with gr.Blocks(title="media-mind") as demo:
-        gr.Markdown("# 🧠 media-mind — NAS 多模态检索\n文搜文 · 文搜图 · 图搜图 · 混合检索")
+    with gr.Blocks(title="polyseek") as demo:
+        gr.Markdown("# 🧠 polyseek — NAS 多模态检索\n文搜文 · 文搜图 · 图搜图 · 混合检索")
 
         # ---------------- 配置面板 ----------------
         with gr.Accordion("⚙️ 运行配置（可热重载引擎）", open=False):
@@ -228,7 +228,7 @@ def build_ui(config_path: str = "config.yaml"):
 
 
 def main():
-    config_path = os.environ.get("MEDIA_MIND_CONFIG", "config.yaml")
+    config_path = os.environ.get("POLYSEEK_CONFIG", "config.yaml")
     demo = build_ui(config_path)
     demo.launch(server_name="0.0.0.0", server_port=7860)
 

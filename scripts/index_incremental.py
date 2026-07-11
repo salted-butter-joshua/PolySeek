@@ -1,16 +1,16 @@
 #!/usr/bin/env python
-"""增量索引脚本：等价于 `media-mind index`，适合 crontab 每小时跑一次。
+"""增量索引脚本：等价于 `polyseek index`，适合 crontab 每小时跑一次。
 
-    0 * * * * cd /app && python scripts/index_incremental.py >> /var/log/media-mind.log 2>&1
+    0 * * * * cd /app && python scripts/index_incremental.py >> /var/log/polyseek.log 2>&1
 """
 
 from __future__ import annotations
 
 import argparse
 
-from media_mind.config import load_config
-from media_mind.context import build_pipeline, build_search_context
-from media_mind.logging_setup import setup_logging
+from polyseek.config import load_config
+from polyseek.context import build_pipeline, build_search_context
+from polyseek.logging_setup import setup_logging
 
 
 def main() -> None:

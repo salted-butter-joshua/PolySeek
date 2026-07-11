@@ -1,4 +1,4 @@
-# media-mind 容器编排：Qdrant（向量库）+ API + 可选 Web UI。
+# polyseek 容器编排：Qdrant（向量库）+ API + 可选 Web UI。
 #
 # 常用命令：
 #   docker compose up -d qdrant api           # 起向量库和 API
@@ -33,14 +33,14 @@ services:
     ports:
       - "8900:8900"
     environment:
-      MEDIA_MIND_CONFIG: /app/config.docker.yaml
+      POLYSEEK_CONFIG: /app/config.docker.yaml
     volumes:
       - ./config.docker.yaml:/app/config.docker.yaml:ro
       - model_cache:/app/models
       - index_state:/app/data
       # 把你的 NAS 媒体目录挂进来（只读）
       - ./sample_data:/data/media:ro
-    command: ["uvicorn", "media_mind.api.server:app", "--host", "0.0.0.0", "--port", "8900"]
+    command: ["uvicorn", "polyseek.api.server:app", "--host", "0.0.0.0", "--port", "8900"]
 
   # 一次性索引任务：docker compose run --rm indexer
   indexer:
@@ -49,7 +49,7 @@ services:
       qdrant:
         condition: service_healthy
     environment:
-      MEDIA_MIND_CONFIG: /app/config.docker.yaml
+      POLYSEEK_CONFIG: /app/config.docker.yaml
     volumes:
       - ./config.docker.yaml:/app/config.docker.yaml:ro
       - model_cache:/app/models
@@ -66,13 +66,13 @@ services:
     ports:
       - "7860:7860"
     environment:
-      MEDIA_MIND_CONFIG: /app/config.docker.yaml
+      POLYSEEK_CONFIG: /app/config.docker.yaml
     volumes:
       - ./config.docker.yaml:/app/config.docker.yaml:ro
       - model_cache:/app/models
       - index_state:/app/data
       - ./sample_data:/data/media:ro
-    command: ["python", "-m", "media_mind.webui.app"]
+    command: ["python", "-m", "polyseek.webui.app"]
 
 volumes:
   qdrant_storage:

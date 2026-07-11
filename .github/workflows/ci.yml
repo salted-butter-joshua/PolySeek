@@ -23,7 +23,6 @@ jobs:
           cache: pip
 
       - name: Install (核心依赖 + dev，跳过重型 CLIP 权重库)
-        working-directory: media-mind
         run: |
           python -m pip install --upgrade pip
           # 装 CPU 版 torch，避免拉 CUDA
@@ -31,15 +30,14 @@ jobs:
           pip install -e ".[dev]"
 
       - name: Ruff lint
-        working-directory: media-mind
-        run: ruff check media_mind tests scripts
+        run: ruff check polyseek tests scripts
 
-      - name: Mypy type check
-        working-directory: media-mind
-        run: mypy media_mind || true   # 类型检查暂不阻断（渐进式）
+      # 类型检查：当前为「渐进式类型化」——非阻断，仅作参考。
+      # 随着类型标注补全，未来可去掉 `|| true` 改为强制。见 README「开发」小节。
+      - name: Mypy type check (non-blocking, gradual typing)
+        run: mypy polyseek || true
 
       - name: Pytest（用 Fake 组件，无需模型/外部 DB）
-        working-directory: media-mind
         run: pytest -v
 
   docker-build:
@@ -48,5 +46,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build CPU image (仅验证可构建，不推送)
-        working-directory: media-mind
-        run: docker build -f Dockerfile -t media-mind:ci .
+        # CI 跑在海外 runner，用官方源覆盖 Dockerfile 里默认的国内镜像，避免慢/失败
+        run: |
+          docker build -f Dockerfile -t polyseek:ci \
+            --build-arg APT_MIRROR=deb.debian.org \
+            --build-arg PIP_INDEX=https://pypi.org/simple \
+            --build-arg TORCH_INDEX=https://download.pytorch.org/whl/cpu \
+            .

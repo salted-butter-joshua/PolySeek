@@ -21,8 +21,8 @@ ENV PYTHONUNBUFFERED=1 \
     PIP_INDEX_URL=${PIP_INDEX} \
     HF_HOME=/app/models \
     HF_ENDPOINT=https://hf-mirror.com \
-    MEDIA_MIND_CONFIG=/app/config.docker.yaml \
-    MEDIA_MIND__EMBEDDING__DEVICE=cuda
+    POLYSEEK_CONFIG=/app/config.docker.yaml \
+    POLYSEEK__EMBEDDING__DEVICE=cuda
 
 # apt 换国内镜像（兼容 deb822 新格式与老 sources.list），再装 ffmpeg
 RUN set -eux; \
@@ -39,7 +39,7 @@ RUN set -eux; \
 WORKDIR /app
 
 COPY pyproject.toml README.md ./
-COPY media_mind ./media_mind
+COPY polyseek ./polyseek
 
 # torch/torchvision（CUDA 构建）+ 项目依赖 + Chinese-CLIP，全部走国内镜像
 RUN pip install --index-url ${TORCH_INDEX} torch torchvision \
@@ -53,4 +53,4 @@ RUN mkdir -p /app/data /app/models
 
 EXPOSE 8900 7860
 
-CMD ["uvicorn", "media_mind.api.server:app", "--host", "0.0.0.0", "--port", "8900"]
+CMD ["uvicorn", "polyseek.api.server:app", "--host", "0.0.0.0", "--port", "8900"]

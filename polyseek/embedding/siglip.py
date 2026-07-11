@@ -34,7 +34,7 @@ class SigLIPEmbedding(EmbeddingService):
             from transformers import AutoModel, AutoProcessor
         except ImportError as e:  # pragma: no cover
             raise ImportError(
-                "缺少 transformers，请安装：pip install 'media-mind[siglip]'"
+                "缺少 transformers，请安装：pip install 'polyseek[siglip]'"
             ) from e
 
         logger.info("Loading SigLIP model {} on {} ...", model_name, device)

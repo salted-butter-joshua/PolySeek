@@ -70,8 +70,7 @@ all = [
 ]
 
 [project.scripts]
-polyseek = "media_mind.cli.main:app"
-media-mind = "media_mind.cli.main:app"   # 兼容旧命令名
+polyseek = "polyseek.cli.main:app"
 
 [project.urls]
 Homepage = "https://github.com/salted-butter-joshua/PolySeek"
@@ -79,7 +78,7 @@ Repository = "https://github.com/salted-butter-joshua/PolySeek"
 Issues = "https://github.com/salted-butter-joshua/PolySeek/issues"
 
 [tool.setuptools.packages.find]
-include = ["media_mind*"]
+include = ["polyseek*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

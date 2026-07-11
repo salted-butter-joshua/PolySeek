@@ -20,23 +20,23 @@ install-dev:
 	pip install -e ".[siglip,audio,onnx,webui,dev]"
 
 lint:
-	ruff check media_mind tests
-	mypy media_mind
+	ruff check polyseek tests
+	mypy polyseek
 
 test:
 	pytest
 
 index:
-	python -m media_mind.cli.main index
+	python -m polyseek.cli.main index
 
 index-full:
-	python -m media_mind.cli.main index --full
+	python -m polyseek.cli.main index --full
 
 serve:
-	python -m media_mind.cli.main serve
+	python -m polyseek.cli.main serve
 
 ui:
-	python -m media_mind.webui.app
+	python -m polyseek.webui.app
 
 data:
 	python scripts/generate_data.py --out sample_data --target-gb 2.0

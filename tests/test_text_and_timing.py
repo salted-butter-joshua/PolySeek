@@ -2,15 +2,15 @@
 
 from __future__ import annotations
 
-from media_mind.config import AppConfig, DataSource, IndexingConfig
-from media_mind.ingestion.pipeline import IngestionPipeline
-from media_mind.ingestion.scanner import FileScanner
-from media_mind.ingestion.text_processor import TextProcessor
-from media_mind.search import SearchEngine
+from polyseek.config import AppConfig, DataSource, IndexingConfig
+from polyseek.ingestion.pipeline import IngestionPipeline
+from polyseek.ingestion.scanner import FileScanner
+from polyseek.ingestion.text_processor import TextProcessor
+from polyseek.search import SearchEngine
 
 
 def test_text_processor_chunks(tmp_path):
-    from media_mind.config import TextConfig
+    from polyseek.config import TextConfig
 
     doc = tmp_path / "a.txt"
     doc.write_text("这是一段足够长的中文文本，" * 30, encoding="utf-8")
@@ -46,7 +46,7 @@ def test_index_text_and_search(tmp_path, fake_embedding, memory_store):
     assert all(r.media_type == "text" for r in results)
 
     # 统计落盘且记录了 text 类型
-    from media_mind.ingestion.stats import IngestionStats
+    from polyseek.ingestion.stats import IngestionStats
 
     stats = IngestionStats.load(cfg.indexing.stats_path)
     assert stats.per_type["text"].files == 3

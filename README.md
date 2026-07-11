@@ -139,8 +139,8 @@ vector_store:
 也支持环境变量覆盖（优先级：环境变量 > YAML > 默认值）：
 
 ```bash
-export MEDIA_MIND__EMBEDDING__BACKEND=siglip
-export MEDIA_MIND__EMBEDDING__DEVICE=cuda
+export POLYSEEK__EMBEDDING__BACKEND=siglip
+export POLYSEEK__EMBEDDING__DEVICE=cuda
 ```
 
 > 换 Embedding 后端会改变向量维度，需重建索引（[ADR-0004](docs/adr/0004-embedding-backend-abstraction.md)）。
@@ -198,7 +198,7 @@ OVERALL      100   ...
 
 ```
 polyseek/
-├── media_mind/              # Python 包（导入名，发行名为 polyseek）
+├── polyseek/              # Python 包（导入名，发行名为 polyseek）
 │   ├── config.py            # pydantic 强类型配置
 │   ├── context.py           # 依赖装配（config→embedding→store→engine）
 │   ├── embedding/           # base + chinese_clip + siglip + openai_clip + 工厂
@@ -241,6 +241,10 @@ make test     # pytest（快速，不依赖真实模型/向量库）
 常用 Make 目标：`make data`（生成数据）· `make eval` · `make run-eval` · `make serve` · `make ui` ·
 `make docker-up` · `make gpu-up`。
 
+**类型检查策略（渐进式）**：CI 中 `mypy` 为**非阻断**（`|| true`）——这是有意为之的
+「渐进式类型化」决策，而非疏漏。核心模块已带类型标注，但尚未做到全量零告警；随着标注
+补全，未来会去掉 `|| true` 转为强制。`ruff` 与 `pytest` 则是**强制门禁**，失败即挂 CI。
+
 ## 🗺️ 路线图
 
 - [x] Phase 1：图片索引 + 文搜图 / 图搜图 + CLI
@@ -263,9 +267,6 @@ sudo tee /etc/docker/daemon.json >/dev/null <<'EOF'
 EOF
 sudo systemctl restart docker
 ```
-
-**为什么发行名是 `polyseek` 但导入是 `media_mind`？** 与 `scikit-learn`→`sklearn` 同理，
-发行名与导入名不同在 Python 生态很常见；命令行 `polyseek` 与 `media-mind` 均可用。
 
 **合成音频能被文搜音频检索到吗？** 生成器产出的是正弦音（无语音内容），Whisper 不会产出有意义转写；
 真实语音检索请用真实音频或 TTS 素材。

@@ -1,6 +1,6 @@
 # 架构决策记录（ADR）
 
-本目录记录 media-mind 的关键架构与技术选型决策。每条 ADR 是一个不可变的历史快照：
+本目录记录 polyseek 的关键架构与技术选型决策。每条 ADR 是一个不可变的历史快照：
 决策一旦做出就记录下来，后续若被推翻，新增一条 ADR 并把旧的标记为 `Superseded`，而不是删改。
 
 格式参考 [MADR](https://adr.github.io/madr/)。新建 ADR 请复制 [0000-template.md](0000-template.md)。

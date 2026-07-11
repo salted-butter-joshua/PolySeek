@@ -27,7 +27,7 @@ GPU 通过 compose 的 `deploy.resources.reservations.devices` 预留；`device=
 ## 后果
 
 - **正面**：一条 `docker compose -f docker-compose.gpu.yaml up` 起全栈；CPU/GPU 仅镜像与
-  `MEDIA_MIND__EMBEDDING__DEVICE` 之差。
+  `POLYSEEK__EMBEDDING__DEVICE` 之差。
 - **负面**：镜像含完整 CUDA runtime（~3-4GB）；首次构建拉取较大。
 - **前置条件**：`nvidia-container-toolkit` 必装，`docker run --rm --gpus all nvidia/cuda:12.1.0-base nvidia-smi` 应可用。
 - **显存参考**：ViT-B-16 + Whisper base 单卡 <4GB，RTX 2080（8GB）充裕，可增大 `batch_size`。

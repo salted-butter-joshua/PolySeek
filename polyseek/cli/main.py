@@ -117,9 +117,9 @@ def serve(config: str = ConfigOpt):
     # 通过环境变量把配置路径传给 API 进程
     import os
 
-    os.environ["MEDIA_MIND_CONFIG"] = config
+    os.environ["POLYSEEK_CONFIG"] = config
     uvicorn.run(
-        "media_mind.api.server:app",
+        "polyseek.api.server:app",
         host=cfg.api.host,
         port=cfg.api.port,
         log_level=cfg.logging.level.lower(),

@@ -15,7 +15,7 @@ ENV PYTHONUNBUFFERED=1 \
     PIP_INDEX_URL=${PIP_INDEX} \
     HF_HOME=/app/models \
     HF_ENDPOINT=https://hf-mirror.com \
-    MEDIA_MIND_CONFIG=/app/config.docker.yaml
+    POLYSEEK_CONFIG=/app/config.docker.yaml
 
 # apt 换国内镜像，再装 ffmpeg（视频抽帧 / whisper 音频解码）
 RUN set -eux; \
@@ -33,7 +33,7 @@ WORKDIR /app
 
 # ---- 依赖层（先装依赖，利用缓存） ----
 COPY pyproject.toml README.md ./
-COPY media_mind ./media_mind
+COPY polyseek ./polyseek
 
 # CPU 版 torch 走交大镜像；其余依赖走清华 PyPI
 RUN pip install --index-url ${TORCH_INDEX} torch torchvision \
@@ -49,4 +49,4 @@ RUN mkdir -p /app/data /app/models
 EXPOSE 8900 7860
 
 # 默认启动 REST API；索引/UI 通过 compose 的其他 service 或 docker exec 触发
-CMD ["uvicorn", "media_mind.api.server:app", "--host", "0.0.0.0", "--port", "8900"]
+CMD ["uvicorn", "polyseek.api.server:app", "--host", "0.0.0.0", "--port", "8900"]

@@ -23,9 +23,9 @@ from pathlib import Path
 # 允许直接 `python scripts/generate_data.py` 运行
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from media_mind.data_gen.concepts import all_concepts  # noqa: E402
-from media_mind.data_gen.shapes import draw_concept_image  # noqa: E402
-from media_mind.data_gen.text_gen import generate_document  # noqa: E402
+from polyseek.data_gen.concepts import all_concepts  # noqa: E402
+from polyseek.data_gen.shapes import draw_concept_image  # noqa: E402
+from polyseek.data_gen.text_gen import generate_document  # noqa: E402
 
 
 def _dir_size(path: Path) -> int:

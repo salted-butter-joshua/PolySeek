@@ -18,9 +18,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from media_mind.config import load_config  # noqa: E402
-from media_mind.context import build_search_context  # noqa: E402
-from media_mind.logging_setup import setup_logging  # noqa: E402
+from polyseek.config import load_config  # noqa: E402
+from polyseek.context import build_search_context  # noqa: E402
+from polyseek.logging_setup import setup_logging  # noqa: E402
 
 
 def concept_of(path: str) -> str:
