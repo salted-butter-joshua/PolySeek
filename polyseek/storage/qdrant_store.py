@@ -35,8 +35,9 @@ class QdrantStore(VectorStore):
             grpc_port=config.grpc_port,
             prefer_grpc=config.prefer_grpc,
             api_key=config.api_key,
+            timeout=config.timeout,  # 大批量索引时优化器构建 HNSW 会短暂阻塞写入，需更长超时
         )
-        logger.info("Qdrant connected: {}:{}", config.host, config.port)
+        logger.info("Qdrant connected: {}:{} (timeout={}s)", config.host, config.port, config.timeout)
 
     # ------------------------------------------------------------------ #
     def create_collection(self, dimension: int) -> None:
@@ -83,8 +84,29 @@ class QdrantStore(VectorStore):
             models.PointStruct(id=ids[i], vector=vectors[i].tolist(), payload=metadatas[i])
             for i in range(len(vectors))
         ]
-        self.client.upsert(collection_name=self.collection_name, points=points)
+        self._upsert_with_retry(points)
         return ids
+
+    def _upsert_with_retry(self, points, attempts: int = 4) -> None:
+        """带指数退避的 upsert：优化器构建 HNSW 时可能短暂阻塞导致 DEADLINE_EXCEEDED，
+        退避后重试即可恢复，避免整个大批量索引因偶发超时而中断。"""
+        import time as _time
+
+        for i in range(attempts):
+            try:
+                self.client.upsert(
+                    collection_name=self.collection_name, points=points, wait=True
+                )
+                return
+            except Exception as e:
+                if i == attempts - 1:
+                    raise
+                delay = 2**i  # 1, 2, 4 秒
+                logger.warning(
+                    "Qdrant upsert 第 {}/{} 次失败（{}），{}s 后重试",
+                    i + 1, attempts, type(e).__name__, delay,
+                )
+                _time.sleep(delay)
 
     def search(
         self,

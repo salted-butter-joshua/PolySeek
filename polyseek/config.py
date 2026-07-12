@@ -54,6 +54,7 @@ class QdrantConfig(BaseModel):
     collection_name: str = "media_embeddings"
     hnsw_m: int = Field(16, ge=4, le=64)
     hnsw_ef_construct: int = Field(200, ge=8)
+    timeout: int = Field(120, ge=1)  # gRPC/REST 超时秒数（大批量索引时优化器阻塞需更长）
 
 
 class VectorStoreConfig(BaseModel):
