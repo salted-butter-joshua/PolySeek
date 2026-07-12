@@ -14,6 +14,7 @@ import torch
 from loguru import logger
 
 from .base import EmbeddingService, ImageInput
+from .siglip import _as_tensor
 
 
 class OpenAIClipEmbedding(EmbeddingService):
@@ -45,7 +46,7 @@ class OpenAIClipEmbedding(EmbeddingService):
     def encode_image(self, image: ImageInput) -> np.ndarray:
         img = self._load_pil(image)
         inputs = self.processor(images=img, return_tensors="pt").to(self.device)
-        features = self.model.get_image_features(**inputs).cpu().numpy()
+        features = _as_tensor(self.model.get_image_features(**inputs)).cpu().numpy()
         return self.normalize(features).squeeze(0)
 
     @torch.no_grad()
@@ -53,7 +54,7 @@ class OpenAIClipEmbedding(EmbeddingService):
         inputs = self.processor(
             text=text, return_tensors="pt", padding=True, truncation=True
         ).to(self.device)
-        features = self.model.get_text_features(**inputs).cpu().numpy()
+        features = _as_tensor(self.model.get_text_features(**inputs)).cpu().numpy()
         return self.normalize(features).squeeze(0)
 
     @torch.no_grad()
@@ -74,7 +75,7 @@ class OpenAIClipEmbedding(EmbeddingService):
 
         inputs = self.processor(images=pil_images, return_tensors="pt", padding=True)
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
-        features = self.model.get_image_features(**inputs).cpu().numpy()
+        features = _as_tensor(self.model.get_image_features(**inputs)).cpu().numpy()
         return self.normalize(features), kept
 
     @torch.no_grad()
@@ -85,5 +86,5 @@ class OpenAIClipEmbedding(EmbeddingService):
             text=texts, return_tensors="pt", padding=True, truncation=True
         )
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
-        features = self.model.get_text_features(**inputs).cpu().numpy()
+        features = _as_tensor(self.model.get_text_features(**inputs)).cpu().numpy()
         return self.normalize(features)

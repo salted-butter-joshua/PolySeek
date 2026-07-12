@@ -20,6 +20,23 @@ from loguru import logger
 from .base import EmbeddingService, ImageInput
 
 
+def _as_tensor(out) -> torch.Tensor:
+    """兼容不同 transformers 版本的 get_*_features 返回值。
+
+    旧版直接返回张量；新版（如 SigLIP2 在新 transformers 里）返回
+    BaseModelOutputWithPooling 之类的 ModelOutput，需取 pooler_output。
+    """
+    if isinstance(out, torch.Tensor):
+        return out
+    pooled = getattr(out, "pooler_output", None)
+    if pooled is not None:
+        return pooled
+    lhs = getattr(out, "last_hidden_state", None)
+    if lhs is not None:
+        return lhs.mean(dim=1)
+    raise TypeError(f"无法从 {type(out).__name__} 提取特征张量")
+
+
 class SigLIPEmbedding(EmbeddingService):
     """基于 transformers 的 SigLIP / SigLIP 2 实现。"""
 
@@ -46,7 +63,7 @@ class SigLIPEmbedding(EmbeddingService):
         with torch.no_grad():
             probe = self.processor(text=["probe"], return_tensors="pt", padding=True)
             probe = {k: v.to(device) for k, v in probe.items()}
-            feats = self.model.get_text_features(**probe)
+            feats = _as_tensor(self.model.get_text_features(**probe))
         self.dimension = int(feats.shape[-1])
         logger.info("SigLIP loaded. dimension={}", self.dimension)
 
@@ -54,7 +71,7 @@ class SigLIPEmbedding(EmbeddingService):
     def encode_image(self, image: ImageInput) -> np.ndarray:
         img = self._load_pil(image)
         inputs = self.processor(images=img, return_tensors="pt").to(self.device)
-        features = self.model.get_image_features(**inputs).cpu().numpy()
+        features = _as_tensor(self.model.get_image_features(**inputs)).cpu().numpy()
         return self.normalize(features).squeeze(0)
 
     @torch.no_grad()
@@ -62,7 +79,7 @@ class SigLIPEmbedding(EmbeddingService):
         inputs = self.processor(
             text=text, return_tensors="pt", padding=True, truncation=True
         ).to(self.device)
-        features = self.model.get_text_features(**inputs).cpu().numpy()
+        features = _as_tensor(self.model.get_text_features(**inputs)).cpu().numpy()
         return self.normalize(features).squeeze(0)
 
     @torch.no_grad()
@@ -83,7 +100,7 @@ class SigLIPEmbedding(EmbeddingService):
 
         inputs = self.processor(images=pil_images, return_tensors="pt", padding=True)
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
-        features = self.model.get_image_features(**inputs).cpu().numpy()
+        features = _as_tensor(self.model.get_image_features(**inputs)).cpu().numpy()
         return self.normalize(features), kept
 
     @torch.no_grad()
@@ -94,5 +111,5 @@ class SigLIPEmbedding(EmbeddingService):
             text=texts, return_tensors="pt", padding=True, truncation=True
         )
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
-        features = self.model.get_text_features(**inputs).cpu().numpy()
+        features = _as_tensor(self.model.get_text_features(**inputs)).cpu().numpy()
         return self.normalize(features)
