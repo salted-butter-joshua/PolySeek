@@ -51,14 +51,22 @@ def gen_text(out: Path, docs: int, concepts, manifest: list) -> None:
 
 
 def gen_images_until(out: Path, concepts, target_bytes: int, other_bytes: int,
-                     img_size: int, manifest: list) -> None:
+                     img_size: int, manifest: list, num_images: int | None = None) -> None:
     d = out / "images"
     d.mkdir(parents=True, exist_ok=True)
     i = 0
+    # 每 500 张才 stat 一次目录，避免大规模生成时 _dir_size 反复全量扫描拖慢
+    size_check_every = 500
+    running_bytes = other_bytes
     while True:
-        total = other_bytes + _dir_size(d)
-        if total >= target_bytes:
-            break
+        if num_images is not None:
+            if i >= num_images:
+                break
+        else:
+            if i % size_check_every == 0:
+                running_bytes = other_bytes + _dir_size(d)
+            if running_bytes >= target_bytes:
+                break
         c = concepts[i % len(concepts)]
         img = draw_concept_image(c.color_rgb, c.shape_key, size=img_size, seed=i)
         path = d / _fname(c, i, ".jpg")
@@ -69,7 +77,8 @@ def gen_images_until(out: Path, concepts, target_bytes: int, other_bytes: int,
         )
         i += 1
         if i % 500 == 0:
-            print(f"[image] {i} images, total ~{total/1e9:.2f} GB ...")
+            tgt = f"/{num_images}" if num_images else f" ~{running_bytes/1e9:.2f} GB"
+            print(f"[image] {i}{tgt} images ...")
     print(f"[image] {i} images -> {d}")
 
 
@@ -126,6 +135,8 @@ def main() -> None:
     p.add_argument("--out", default="sample_data")
     p.add_argument("--target-gb", type=float, default=2.0)
     p.add_argument("--img-size", type=int, default=512)
+    p.add_argument("--num-images", type=int, default=None,
+                   help="精确生成的图片张数（设了则忽略 --target-gb 的图片填充，用于\"N万张图\"基准）")
     p.add_argument("--text-docs", type=int, default=240)
     p.add_argument("--videos", type=int, default=120)
     p.add_argument("--video-seconds", type=int, default=4)
@@ -157,10 +168,13 @@ def main() -> None:
     elif not args.no_audio:
         print("[audio] ffmpeg 未找到，跳过音频生成")
 
-    # 图片作为体积主力，填充到目标大小
+    # 图片：按张数（--num-images）或按体积（--target-gb）填充
     target_bytes = int(args.target_gb * 1e9)
     other_bytes = _dir_size(out)  # 已生成的 text/video/audio
-    if other_bytes < target_bytes:
+    if args.num_images is not None:
+        gen_images_until(out, concepts, target_bytes, other_bytes, args.img_size,
+                         manifest, num_images=args.num_images)
+    elif other_bytes < target_bytes:
         gen_images_until(out, concepts, target_bytes, other_bytes, args.img_size, manifest)
     else:
         print("[image] 其它类型已达目标大小，跳过图片填充")

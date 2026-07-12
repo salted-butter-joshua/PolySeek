@@ -87,7 +87,8 @@ def run(engine, cases: list[dict], top_k: int) -> dict:
         return lat[min(len(lat) - 1, int(len(lat) * p))] if lat else 0.0
     o.update({"n": overall["n"], "avg_embed_ms": overall["embed_ms"] / max(1, overall["n"]),
               "avg_search_ms": overall["search_ms"] / max(1, overall["n"]),
-              "latency_p50_ms": _pct(0.50), "latency_p95_ms": _pct(0.95)})
+              "latency_p50_ms": _pct(0.50), "latency_p95_ms": _pct(0.95),
+              "latency_p99_ms": _pct(0.99)})
     report["overall"] = o
     return report
 
@@ -106,7 +107,8 @@ def _print(report: dict, cfg) -> None:
     print("-" * len(header))
     print(f"{'OVERALL':<12}{o['n']:>4}{o['recall@1']:>8.3f}{o['recall@5']:>8.3f}"
           f"{o['recall@10']:>8.3f}{o['mrr']:>8.3f}{o['avg_embed_ms']:>10.2f}{o['avg_search_ms']:>10.2f}")
-    print(f"query 延迟 p50={o.get('latency_p50_ms', 0):.2f} ms  p95={o.get('latency_p95_ms', 0):.2f} ms")
+    print(f"query 延迟 p50={o.get('latency_p50_ms', 0):.2f}  p95={o.get('latency_p95_ms', 0):.2f}  "
+          f"p99={o.get('latency_p99_ms', 0):.2f} ms")
 
 
 def main() -> None:

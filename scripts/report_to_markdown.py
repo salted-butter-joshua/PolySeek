@@ -108,8 +108,9 @@ def main() -> None:
         md += ["### 检索质量与延迟", "", _quality_table(reports[0]), ""]
         o = reports[0].get("overall", {})
         md.append(
-            f"> query 延迟 p50 {o.get('latency_p50_ms', 0):.2f} ms · "
-            f"p95 {o.get('latency_p95_ms', 0):.2f} ms"
+            f"> query 延迟 p50 {o.get('latency_p50_ms', 0):.2f} · "
+            f"p95 {o.get('latency_p95_ms', 0):.2f} · "
+            f"**p99 {o.get('latency_p99_ms', 0):.2f} ms**"
         )
     else:
         md += ["### 后端对比（OVERALL）", "", _compare_table(reports), "",
