@@ -227,7 +227,8 @@ polyseek/
 
 索引选型：`<10万` 用 FLAT（recall 100%），`10~100万` 用 HNSW（recall ~98%，快 10x），`>100万` 用 IVF。
 
-**真实基准（RTX 2080）** 见 [docs/benchmark.md](docs/benchmark.md)，可一键复现：
+**真实基准（RTX 2080）** 见 [docs/benchmark.md](docs/benchmark.md)；
+**Flickr30k-CN 真实数据实验 + SigLIP2 A/B 完整步骤** 见 [docs/flickr30k-cn-experiment.md](docs/flickr30k-cn-experiment.md)。合成数据基准可一键复现：
 
 ```bash
 make data                 # 生成合成数据
