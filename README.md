@@ -215,20 +215,44 @@ polyseek/
 └── pyproject.toml · Makefile
 ```
 
-## 📊 性能参考（CPU, ViT-B-16）
+## 📊 性能
+
+### 实测：Flickr30k-CN 真实数据（RTX 2080 8GB, Ubuntu 22.04）
+
+语料 975 张真实图片，4875 条人工翻译中文 query，命中判定按 ground-truth 图片精确匹配。
+Chinese-CLIP (ViT-B-16, 512d) + Qdrant (HNSW)：
+
+| 指标 | 数值 |
+|------|------|
+| **Recall@1** | **0.625** |
+| **Recall@5** | **0.867** |
+| **Recall@10** | **0.926** |
+| **MRR** | **0.729** |
+| query 编码（GPU） | 6.3 ms |
+| 向量检索（HNSW） | 2.0 ms |
+| 端到端延迟 p50 / p95 / **p99** | 8.2 / 8.6 / **9.1 ms** |
+
+> 即"用一句中文描述，92.6% 的情况下正确图片出现在前 10 个结果里，端到端 P99 不到 10ms"。
+> 完整数字与复现步骤：[docs/benchmark.md](docs/benchmark.md) ·
+> [docs/flickr30k-cn-experiment.md](docs/flickr30k-cn-experiment.md)
+
+**A/B 实验附带产出**：SigLIP 后端曾因文本用动态 `padding=True`（而非其训练要求的
+`padding="max_length"`）导致图文空间错位、R@10 跌至 0.037（≈随机）——正是同一评测集的
+A/B 对比暴露了该问题，已修复（见 `polyseek/embedding/siglip.py`）。修复后的 SigLIP2 对比数据待补充。
+
+### 资源估算（CPU, ViT-B-16）
 
 | 项目 | 估算 |
 |------|------|
 | 5 万图 + 500 视频(~15万帧) + 1000 音频 | ~25 万向量 |
 | 向量 + HNSW 索引磁盘 | ~1.3 GB |
 | 运行内存 | ~1.7 GB |
-| 单次查询延迟 | ~55ms（编码 50ms + 检索 5ms） |
+| CPU 单次查询延迟 | ~55ms（编码 50ms + 检索 5ms）；GPU 实测见上表 |
 | ONNX 加速图像编码 | 2–3x |
 
 索引选型：`<10万` 用 FLAT（recall 100%），`10~100万` 用 HNSW（recall ~98%，快 10x），`>100万` 用 IVF。
 
-**真实基准（RTX 2080）** 见 [docs/benchmark.md](docs/benchmark.md)；
-**Flickr30k-CN 真实数据实验 + SigLIP2 A/B 完整步骤** 见 [docs/flickr30k-cn-experiment.md](docs/flickr30k-cn-experiment.md)。合成数据基准可一键复现：
+合成数据基准（测吞吐/延迟规模）可一键复现：
 
 ```bash
 make data                 # 生成合成数据
