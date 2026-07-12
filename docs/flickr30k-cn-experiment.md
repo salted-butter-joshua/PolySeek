@@ -35,20 +35,13 @@ unzip -q /data/flickr-image-dataset.zip -d /data
 mv /data/flickr30k_images/flickr30k_images /data/flickr30k-images
 ```
 
-**B. HuggingFace 镜像（国内推荐，走 hf-mirror）**
+**B. HuggingFace 镜像（国内推荐，走 hf-mirror，支持断点续传）**
 
 ```bash
 mkdir -p /data/flickr30k-images
 docker compose -f docker-compose.gpu.yaml run --rm \
-  -v /data/flickr30k-images:/raw indexer sh -c '
-  pip install -q datasets && python - <<PY
-from datasets import load_dataset
-ds = load_dataset("nlphuji/flickr30k", split="test")   # 全量 31783 张都在 test split
-for i, ex in enumerate(ds):
-    ex["image"].convert("RGB").save(f"/raw/{ex[\"filename\"]}")
-    if i % 2000 == 0: print(i)
-print("done", len(ds))
-PY'
+  -v /data/flickr30k-images:/raw indexer sh -c \
+  'pip install -q datasets && python scripts/download_flickr30k_images.py --out /raw'
 ```
 
 完成后 `ls /data/flickr30k-images | wc -l` 应为 31783。
