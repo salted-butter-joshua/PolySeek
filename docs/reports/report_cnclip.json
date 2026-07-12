@@ -1,0 +1,33 @@
+{
+  "per_mode": {
+    "text2image": {
+      "recall@1": 0.6254358974358974,
+      "recall@5": 0.8672820512820513,
+      "recall@10": 0.9261538461538461,
+      "mrr": 0.7293102157102169,
+      "n": 4875,
+      "avg_embed_ms": 6.478956499726523,
+      "avg_search_ms": 1.9964289470942906
+    }
+  },
+  "overall": {
+    "recall@1": 0.6254358974358974,
+    "recall@5": 0.8672820512820513,
+    "recall@10": 0.9261538461538461,
+    "mrr": 0.7293102157102169,
+    "n": 4875,
+    "avg_embed_ms": 6.478956499726523,
+    "avg_search_ms": 1.9964289470942906,
+    "latency_p50_ms": 8.342610999534372,
+    "latency_p95_ms": 8.754363996558823,
+    "latency_p99_ms": 9.136211003351491
+  },
+  "config": {
+    "backend": "chinese_clip",
+    "model_name": "ViT-B-16",
+    "device": "cuda",
+    "vector_store": "qdrant",
+    "dimension": 512,
+    "top_k": 10
+  }
+}

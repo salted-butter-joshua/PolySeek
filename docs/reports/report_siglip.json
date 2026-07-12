@@ -1,0 +1,33 @@
+{
+  "per_mode": {
+    "text2image": {
+      "recall@1": 0.49312820512820515,
+      "recall@5": 0.7614358974358975,
+      "recall@10": 0.8385641025641025,
+      "mrr": 0.6072406186406202,
+      "n": 4875,
+      "avg_embed_ms": 4.123778218678079,
+      "avg_search_ms": 2.1173123786843813
+    }
+  },
+  "overall": {
+    "recall@1": 0.49312820512820515,
+    "recall@5": 0.7614358974358975,
+    "recall@10": 0.8385641025641025,
+    "mrr": 0.6072406186406202,
+    "n": 4875,
+    "avg_embed_ms": 4.123778218678079,
+    "avg_search_ms": 2.1173123786843813,
+    "latency_p50_ms": 6.181885000842158,
+    "latency_p95_ms": 6.647750000411179,
+    "latency_p99_ms": 6.954415002837777
+  },
+  "config": {
+    "backend": "siglip",
+    "model_name": "google/siglip2-base-patch16-224",
+    "device": "cuda",
+    "vector_store": "qdrant",
+    "dimension": 768,
+    "top_k": 10
+  }
+}

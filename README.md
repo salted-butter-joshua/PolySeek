@@ -236,9 +236,20 @@ Chinese-CLIP (ViT-B-16, 512d) + Qdrant (HNSW)：
 > 完整数字与复现步骤：[docs/benchmark.md](docs/benchmark.md) ·
 > [docs/flickr30k-cn-experiment.md](docs/flickr30k-cn-experiment.md)
 
-**A/B 实验附带产出**：SigLIP 后端曾因文本用动态 `padding=True`（而非其训练要求的
-`padding="max_length"`）导致图文空间错位、R@10 跌至 0.037（≈随机）——正是同一评测集的
-A/B 对比暴露了该问题，已修复（见 `polyseek/embedding/siglip.py`）。修复后的 SigLIP2 对比数据待补充。
+### A/B：Chinese-CLIP vs SigLIP 2（同一评测集，仅换 Embedding）
+
+| 后端 | 维度 | R@1 | R@5 | R@10 | MRR | 编码(ms) | p99(ms) |
+|------|----:|----:|----:|-----:|----:|---------:|--------:|
+| **chinese_clip** ViT-B-16 | 512 | **0.625** | **0.867** | **0.926** | **0.729** | 6.5 | 9.1 |
+| siglip2-base | 768 | 0.493 | 0.761 | 0.839 | 0.607 | **4.1** | **7.0** |
+
+**结论**：中文 query 上 Chinese-CLIP 质量全面领先（R@1 相对 +26.8%、R@10 +10.4%、MRR +20.1%）；
+SigLIP2 编码快 36%、p99 低 24%，但需 1.5× 向量存储。中文场景默认后端选 Chinese-CLIP，
+该决策由数据支撑（[ADR-0004](docs/adr/0004-embedding-backend-abstraction.md)）。
+
+**A/B 附带产出**：首轮对比暴露 SigLIP 的 padding bug（文本须 `padding="max_length"`，
+动态 padding 会让图文空间错位）——修复后 SigLIP R@10 从 0.037 → 0.839（**23×**）。
+案例详见 [docs/benchmark.md](docs/benchmark.md)。
 
 ### 资源估算（CPU, ViT-B-16）
 
