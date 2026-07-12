@@ -1,87 +1,104 @@
 #!/usr/bin/env python
-"""准备 Flickr30k-CN 数据集：解出图片 + 直接生成 PolySeek 评测集。
+"""准备 Flickr30k-CN（li-xirong / VisualSearch 格式）：分词中文 caption → 评测集，
+并从原始 Flickr30k 图片目录筛出该 split 的图片作为检索语料。
 
-输入是 Chinese-CLIP 官方发布的检索格式（OFA-Sys/Chinese-CLIP 的 datasets）：
-    {split}_imgs.tsv    每行： image_id \\t base64编码的图片
-    {split}_texts.jsonl 每行： {"text_id": int, "text": "中文描述", "image_ids": [int, ...]}
+数据包每个 split 一个目录（如 flickr30kzhmbosontest），结构：
+    ImageSets/<name>.txt              该 split 的图片 id 列表（每行一个 id）
+    TextData/seg.<name>.caption.txt   分词中文描述，每行： <imgid>#<idx> 词 词 词 ...
+    FeatureData/...                   预计算 ResNet 特征（本项目不用，自己算 CLIP）
 
-`image_ids` 就是该 caption 的 ground-truth 图片，天然对应文搜图的正确答案。
+注意：该包不含原始 JPG，需另外下载 Flickr30k 图片（文件名形如 <imgid>.jpg）。
 
 用法：
     python scripts/prepare_flickr30k_cn.py \\
-        --data-dir /data/flickr30k-cn --split test \\
-        --out-images /data/flickr30k-cn/images --extract-images \\
+        --split-dir /data/flickr30k-cn/flickr30kzhmbosontest \\
+        --images-src /data/flickr30k-images \\
+        --out-images /data/flickr30k-cn/test-images \\
         --out-eval eval/flickr30k_cn.json
 """
 
 from __future__ import annotations
 
 import argparse
-import base64
+import glob
 import json
+import shutil
 from pathlib import Path
 
 
-def extract_images(imgs_tsv: Path, out_dir: Path) -> int:
-    out_dir.mkdir(parents=True, exist_ok=True)
-    n = 0
-    with open(imgs_tsv, encoding="utf-8") as f:
+def _find(split_dir: str, sub: str, pattern: str) -> str | None:
+    hits = sorted(glob.glob(str(Path(split_dir) / sub / pattern)))
+    return hits[0] if hits else None
+
+
+def parse_captions(cap_file: str) -> tuple[list[dict], set[str]]:
+    cases: list[dict] = []
+    imgids: set[str] = set()
+    with open(cap_file, encoding="utf-8") as f:
         for line in f:
             line = line.rstrip("\n")
             if not line:
                 continue
-            iid, b64 = line.split("\t", 1)
-            (out_dir / f"{iid}.jpg").write_bytes(base64.b64decode(b64))
-            n += 1
-            if n % 2000 == 0:
-                print(f"  ...已解出 {n} 张")
-    print(f"解出 {n} 张图 -> {out_dir}")
-    return n
-
-
-def build_eval(texts_jsonl: Path, out_eval: Path) -> int:
-    cases = []
-    with open(texts_jsonl, encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if not line:
+            # 左： <imgid>#<idx>   右： 分词 caption（空格分隔）
+            parts = line.split(None, 1)
+            if len(parts) != 2:
                 continue
-            obj = json.loads(line)
-            text = str(obj.get("text", "")).strip()
-            iids = obj.get("image_ids", [])
-            if not text or not iids:
+            head, cap = parts
+            imgid = head.split("#", 1)[0]
+            text = cap.replace(" ", "")  # 分词还原：中文去空格
+            if not text:
                 continue
+            imgids.add(imgid)
             cases.append({
-                "mode": "text2image",
-                "query": text,
-                "target_media_type": "image",
-                "relevant_files": [f"{i}.jpg" for i in iids],
+                "mode": "text2image", "query": text,
+                "target_media_type": "image", "relevant_files": [f"{imgid}.jpg"],
             })
-    out_eval.parent.mkdir(parents=True, exist_ok=True)
-    out_eval.write_text(json.dumps(cases, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"生成 {len(cases)} 条 text2image 评测用例 -> {out_eval}")
-    return len(cases)
+    return cases, imgids
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="准备 Flickr30k-CN：解图 + 生成评测集")
-    ap.add_argument("--data-dir", required=True, help="含 {split}_imgs.tsv 和 {split}_texts.jsonl 的目录")
-    ap.add_argument("--split", default="test")
-    ap.add_argument("--out-images", default=None, help="图片解出目录（用于索引）")
-    ap.add_argument("--extract-images", action="store_true", help="从 tsv 解出图片（大文件，几分钟）")
+    ap = argparse.ArgumentParser(description="准备 Flickr30k-CN（VisualSearch 格式）")
+    ap.add_argument("--split-dir", required=True, help="如 .../flickr30kzhmbosontest")
+    ap.add_argument("--images-src", default=None, help="原始 Flickr30k 图片目录（<imgid>.jpg）")
+    ap.add_argument("--out-images", default=None, help="筛出的语料图片目录（用于索引）")
     ap.add_argument("--out-eval", default="eval/flickr30k_cn.json")
     args = ap.parse_args()
 
-    data_dir = Path(args.data_dir)
-    imgs_tsv = data_dir / f"{args.split}_imgs.tsv"
-    texts_jsonl = data_dir / f"{args.split}_texts.jsonl"
+    cap_file = _find(args.split_dir, "TextData", "seg.*.caption.txt")
+    if not cap_file:
+        raise SystemExit(f"未找到 TextData/seg.*.caption.txt in {args.split_dir}")
+    cases, imgids = parse_captions(cap_file)
+    print(f"解析 caption：{len(cases)} 条，覆盖 {len(imgids)} 张图")
+    if cases:
+        print("样例：", cases[0]["query"], "->", cases[0]["relevant_files"])
 
-    if args.extract_images:
-        if not args.out_images:
-            raise SystemExit("--extract-images 需同时指定 --out-images")
-        extract_images(imgs_tsv, Path(args.out_images))
+    # 语料图片列表：优先 ImageSets，否则用 caption 覆盖的图
+    imgset = _find(args.split_dir, "ImageSets", "*.txt")
+    if imgset:
+        corpus_ids = [ln.strip() for ln in open(imgset, encoding="utf-8") if ln.strip()]
+    else:
+        corpus_ids = sorted(imgids)
+    print(f"语料图片数：{len(corpus_ids)}")
 
-    build_eval(texts_jsonl, Path(args.out_eval))
+    if args.images_src and args.out_images:
+        src, out = Path(args.images_src), Path(args.out_images)
+        out.mkdir(parents=True, exist_ok=True)
+        copied = missing = 0
+        for iid in corpus_ids:
+            p = src / f"{iid}.jpg"
+            if p.exists():
+                shutil.copy(p, out / f"{iid}.jpg")
+                copied += 1
+            else:
+                missing += 1
+        print(f"复制图片 {copied} 张 -> {out}（缺失 {missing}）")
+        if missing:
+            print("⚠️  有缺失图片：检查 --images-src 的文件名是否为 <imgid>.jpg")
+
+    out_eval = Path(args.out_eval)
+    out_eval.parent.mkdir(parents=True, exist_ok=True)
+    out_eval.write_text(json.dumps(cases, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"评测集 -> {out_eval}")
 
 
 if __name__ == "__main__":
