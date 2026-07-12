@@ -4,8 +4,9 @@
 数据集 nlphuji/flickr30k：全量 31783 张图都在 "test" split，字段含 image / filename。
 支持断点续传（已存在的文件跳过）。
 
-用法（容器内，datasets 未装会自动提示）：
-    pip install -q datasets
+注意：nlphuji/flickr30k 是“脚本型”数据集，datasets 3.x 已不支持，
+必须安装 2.x 并信任远程脚本：
+    pip install -q "datasets==2.21.0"
     python scripts/download_flickr30k_images.py --out /raw
 """
 
@@ -23,14 +24,21 @@ def main() -> None:
     args = ap.parse_args()
 
     try:
+        import datasets as _ds_lib
         from datasets import load_dataset
     except ImportError as e:
-        raise SystemExit("缺少 datasets：先执行 pip install datasets") from e
+        raise SystemExit('缺少 datasets：先执行 pip install "datasets==2.21.0"') from e
+
+    if int(_ds_lib.__version__.split(".")[0]) >= 3:
+        raise SystemExit(
+            f"datasets {_ds_lib.__version__} 不支持脚本型数据集（{args.dataset}）。"
+            '请降级：pip install "datasets==2.21.0"'
+        )
 
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
 
-    ds = load_dataset(args.dataset, split=args.split)
+    ds = load_dataset(args.dataset, split=args.split, trust_remote_code=True)
     total = len(ds)
     saved = skipped = 0
     for i, ex in enumerate(ds):

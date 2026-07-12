@@ -41,8 +41,10 @@ mv /data/flickr30k_images/flickr30k_images /data/flickr30k-images
 mkdir -p /data/flickr30k-images
 docker compose -f docker-compose.gpu.yaml run --rm \
   -v /data/flickr30k-images:/raw indexer sh -c \
-  'pip install -q datasets && python scripts/download_flickr30k_images.py --out /raw'
+  'pip install -q "datasets==2.21.0" && python scripts/download_flickr30k_images.py --out /raw'
 ```
+
+> 必须 `datasets==2.21.0`：nlphuji/flickr30k 是脚本型数据集，datasets 3.x 已移除支持。
 
 完成后 `ls /data/flickr30k-images | wc -l` 应为 31783。
 
