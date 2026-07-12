@@ -31,6 +31,22 @@ def _find(split_dir: str, sub: str, pattern: str) -> str | None:
     return hits[0] if hits else None
 
 
+def _detokenize(cap: str) -> str:
+    """还原分词 caption 为自然中文。
+
+    该语料的 token 格式是 ``词:词性``（如 ``警车:n`` ``，:wd``），直接去空格会把
+    词性标注留在文本里污染 query。逐 token 剥掉最后一个 ``:`` 后的词性再拼接；
+    无词性的纯分词格式也兼容。
+    """
+    words = []
+    for tok in cap.split():
+        if ":" in tok:
+            tok = tok.rsplit(":", 1)[0]
+        if tok:
+            words.append(tok)
+    return "".join(words)
+
+
 def parse_captions(cap_file: str) -> tuple[list[dict], set[str]]:
     cases: list[dict] = []
     imgids: set[str] = set()
@@ -39,13 +55,13 @@ def parse_captions(cap_file: str) -> tuple[list[dict], set[str]]:
             line = line.rstrip("\n")
             if not line:
                 continue
-            # 左： <imgid>#<idx>   右： 分词 caption（空格分隔）
+            # 左： <imgid>#<idx>   右： 分词 caption（空格分隔，token 可能带 :词性）
             parts = line.split(None, 1)
             if len(parts) != 2:
                 continue
             head, cap = parts
             imgid = head.split("#", 1)[0]
-            text = cap.replace(" ", "")  # 分词还原：中文去空格
+            text = _detokenize(cap)
             if not text:
                 continue
             imgids.add(imgid)
@@ -83,17 +99,22 @@ def main() -> None:
     if args.images_src and args.out_images:
         src, out = Path(args.images_src), Path(args.out_images)
         out.mkdir(parents=True, exist_ok=True)
-        copied = missing = 0
+        copied_files: set[str] = set()
+        missing = 0
         for iid in corpus_ids:
             p = src / f"{iid}.jpg"
             if p.exists():
                 shutil.copy(p, out / f"{iid}.jpg")
-                copied += 1
+                copied_files.add(f"{iid}.jpg")
             else:
                 missing += 1
-        print(f"复制图片 {copied} 张 -> {out}（缺失 {missing}）")
+        print(f"复制图片 {len(copied_files)} 张 -> {out}（缺失 {missing}）")
         if missing:
-            print("⚠️  有缺失图片：检查 --images-src 的文件名是否为 <imgid>.jpg")
+            print("⚠️  有缺失图片：先补全原图（重跑下载可断点续传）再重跑本脚本更佳")
+            # 评测集与语料保持一致：ground-truth 图不在语料里的用例必然无法命中，剔除
+            before = len(cases)
+            cases = [c for c in cases if all(f in copied_files for f in c["relevant_files"])]
+            print(f"已剔除 ground-truth 缺失的用例 {before - len(cases)} 条，剩 {len(cases)} 条")
 
     out_eval = Path(args.out_eval)
     out_eval.parent.mkdir(parents=True, exist_ok=True)

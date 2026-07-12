@@ -40,19 +40,23 @@ def main() -> None:
 
     ds = load_dataset(args.dataset, split=args.split, trust_remote_code=True)
     total = len(ds)
-    saved = skipped = 0
+    saved = skipped = failed = 0
     for i, ex in enumerate(ds):
-        fname = ex["filename"]
-        path = out / fname
-        if path.exists():
-            skipped += 1
-            continue
-        ex["image"].convert("RGB").save(path)
-        saved += 1
+        try:
+            fname = ex["filename"]
+            path = out / fname
+            if path.exists():
+                skipped += 1
+                continue
+            ex["image"].convert("RGB").save(path)
+            saved += 1
+        except Exception as e:  # 个别坏记录不应中断整体下载
+            failed += 1
+            print(f"  skip bad record #{i}: {type(e).__name__}: {e}", flush=True)
         if i % 2000 == 0:
-            print(f"{i}/{total} (saved={saved}, skipped={skipped})", flush=True)
+            print(f"{i}/{total} (saved={saved}, skipped={skipped}, failed={failed})", flush=True)
 
-    print(f"done: total={total}, saved={saved}, skipped={skipped} -> {out}")
+    print(f"done: total={total}, saved={saved}, skipped={skipped}, failed={failed} -> {out}")
 
 
 if __name__ == "__main__":
