@@ -58,6 +58,7 @@ services:
       POLYSEEK_CONFIG: /app/config.docker.yaml
       POLYSEEK__EMBEDDING__DEVICE: cuda
       NVIDIA_VISIBLE_DEVICES: all
+      GRADIO_ALLOWED_PATHS: /data/media
     volumes:
       - ./config.docker.yaml:/app/config.docker.yaml:ro
       - model_cache:/app/models
@@ -74,6 +75,7 @@ services:
       POLYSEEK_CONFIG: /app/config.docker.yaml
       POLYSEEK__EMBEDDING__DEVICE: cuda
       NVIDIA_VISIBLE_DEVICES: all
+      GRADIO_ALLOWED_PATHS: /data/media
     volumes:
       - ./config.docker.yaml:/app/config.docker.yaml:ro
       - model_cache:/app/models
@@ -94,6 +96,7 @@ services:
       POLYSEEK_CONFIG: /app/config.docker.yaml
       POLYSEEK__EMBEDDING__DEVICE: cuda
       NVIDIA_VISIBLE_DEVICES: all
+      GRADIO_ALLOWED_PATHS: /data/media
     volumes:
       - ./config.docker.yaml:/app/config.docker.yaml:ro
       - model_cache:/app/models
