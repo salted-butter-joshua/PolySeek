@@ -75,6 +75,16 @@ class IngestionPipeline:
         all_files = self._collect_files(data_sources)
         new_files, modified_files, deleted_paths = self.scanner.detect_changes(all_files)
 
+        # 安全护栏：扫到 0 个文件但状态库里有大量记录，几乎必然是数据源未挂载/路径错误，
+        # 而非真的删了所有文件。此时若继续会把整个索引清空——中止并报警。
+        if not all_files and deleted_paths:
+            logger.error(
+                "扫描到 0 个文件，但状态库有 {} 条已索引记录——数据源多半未挂载或路径错误。"
+                "已中止本次增量（跳过删除），以免误清空索引。请确认 data_sources 挂载后重试。",
+                len(deleted_paths),
+            )
+            return
+
         for path in deleted_paths:
             self._remove_file(path)
         for f in modified_files:
