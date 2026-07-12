@@ -24,8 +24,8 @@ def main() -> None:
 
     try:
         from datasets import load_dataset
-    except ImportError:
-        raise SystemExit("缺少 datasets：先执行 pip install datasets")
+    except ImportError as e:
+        raise SystemExit("缺少 datasets：先执行 pip install datasets") from e
 
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
