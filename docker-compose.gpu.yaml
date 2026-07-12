@@ -63,7 +63,7 @@ services:
       - ./config.docker.yaml:/app/config.docker.yaml:ro
       - model_cache:/app/models
       - index_state:/app/data
-      - ./sample_data:/data/media:ro
+      - ${POLYSEEK_MEDIA_DIR:-./sample_data}:/data/media:ro
 
   indexer:
     build: *build
@@ -80,7 +80,7 @@ services:
       - ./config.docker.yaml:/app/config.docker.yaml:ro
       - model_cache:/app/models
       - index_state:/app/data
-      - ./sample_data:/data/media:ro
+      - ${POLYSEEK_MEDIA_DIR:-./sample_data}:/data/media:ro
     command: ["python", "scripts/index_incremental.py", "-c", "/app/config.docker.yaml"]
 
   webui:
@@ -101,7 +101,7 @@ services:
       - ./config.docker.yaml:/app/config.docker.yaml:ro
       - model_cache:/app/models
       - index_state:/app/data
-      - ./sample_data:/data/media:ro
+      - ${POLYSEEK_MEDIA_DIR:-./sample_data}:/data/media:ro
     command: ["python", "-m", "polyseek.webui.app"]
 
 volumes:

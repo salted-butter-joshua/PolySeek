@@ -31,3 +31,6 @@ sample_data/*/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# 本地环境变量（含机器相关路径）
+.env
