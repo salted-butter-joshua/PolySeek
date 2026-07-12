@@ -50,7 +50,6 @@ def run(engine, cases: list[dict], top_k: int) -> dict:
     limit = max(top_k, 10)
     for case in cases:
         mode = case["mode"]
-        target = case["target_concept"]
         mt = case["target_media_type"]
 
         if mode in ("text2text", "text2image"):
@@ -60,7 +59,16 @@ def run(engine, cases: list[dict], top_k: int) -> dict:
         else:
             continue
 
-        ranked = [concept_of(r.file_path) for r in ts.results]
+        # 两种命中判定：
+        # - 合成数据：按文件名解析的“概念”匹配（target_concept）
+        # - 真实数据集（如 Flickr30k-CN）：按具体文件精确匹配（relevant_files，比对 basename）
+        if "relevant_files" in case:
+            relevant = {Path(p).name for p in case["relevant_files"]}
+            ranked_rel = [Path(r.file_path).name in relevant for r in ts.results]
+        else:
+            target = case["target_concept"]
+            ranked_rel = [concept_of(r.file_path) == target for r in ts.results]
+
         latencies.append(ts.total_ms)
 
         for bucket in (per_mode[mode], overall):
@@ -68,10 +76,10 @@ def run(engine, cases: list[dict], top_k: int) -> dict:
             bucket["embed_ms"] += ts.embed_ms
             bucket["search_ms"] += ts.search_ms
             for k in (1, 5, 10):
-                if target in ranked[:k]:
+                if any(ranked_rel[:k]):
                     bucket["hits"][k] += 1
-            for rank, c in enumerate(ranked, 1):
-                if c == target:
+            for rank, hit in enumerate(ranked_rel, 1):
+                if hit:
                     bucket["rr"] += 1.0 / rank
                     break
 
