@@ -230,7 +230,14 @@ def build_ui(config_path: str = "config.yaml"):
 def main():
     config_path = os.environ.get("POLYSEEK_CONFIG", "config.yaml")
     demo = build_ui(config_path)
-    demo.launch(server_name="0.0.0.0", server_port=7860)
+    # Gradio 4 默认只允许服务 CWD/临时目录下的文件；媒体在数据源目录（如 /data/media/*），
+    # 需显式加入 allowed_paths，否则结果画廊里的图片无法显示（InvalidPathError）。
+    cfg = _STATE["base_config"]
+    allowed = []
+    for ds in cfg.data_sources:
+        p = Path(ds.path)
+        allowed.append(str(p if p.is_absolute() else p.resolve()))
+    demo.launch(server_name="0.0.0.0", server_port=7860, allowed_paths=allowed)
 
 
 if __name__ == "__main__":
