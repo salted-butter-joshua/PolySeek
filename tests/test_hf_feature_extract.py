@@ -26,12 +26,11 @@ def test_pooler_output_extracted():
     assert _as_tensor(out) is t
 
 
-def test_last_hidden_state_mean_pooled():
-    lhs = torch.randn(2, 5, 8)
-    out = _FakeOutput(last_hidden_state=lhs)
-    got = _as_tensor(out)
-    assert got.shape == (2, 8)
-    assert torch.allclose(got, lhs.mean(dim=1))
+def test_no_pooler_raises_instead_of_silent_meanpool():
+    # 均值池化不是对齐空间的投影输出，静默兜底会让检索接近随机——必须报错
+    out = _FakeOutput(last_hidden_state=torch.randn(2, 5, 8))
+    with pytest.raises(TypeError):
+        _as_tensor(out)
 
 
 def test_unknown_type_raises():

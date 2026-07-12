@@ -31,10 +31,9 @@ def _as_tensor(out) -> torch.Tensor:
     pooled = getattr(out, "pooler_output", None)
     if pooled is not None:
         return pooled
-    lhs = getattr(out, "last_hidden_state", None)
-    if lhs is not None:
-        return lhs.mean(dim=1)
-    raise TypeError(f"无法从 {type(out).__name__} 提取特征张量")
+    # 不做 last_hidden_state 均值池化兜底：那不是对齐空间的投影输出，
+    # 静默用它会让图文空间错位、检索接近随机——宁可报错暴露问题。
+    raise TypeError(f"无法从 {type(out).__name__} 提取特征张量（缺少 pooler_output）")
 
 
 class SigLIPEmbedding(EmbeddingService):
@@ -61,11 +60,20 @@ class SigLIPEmbedding(EmbeddingService):
 
         # 用一次前向探测实际输出维度（不同 checkpoint 的投影维度不一）。
         with torch.no_grad():
-            probe = self.processor(text=["probe"], return_tensors="pt", padding=True)
-            probe = {k: v.to(device) for k, v in probe.items()}
+            probe = self._tokenize(["probe"])
             feats = _as_tensor(self.model.get_text_features(**probe))
         self.dimension = int(feats.shape[-1])
         logger.info("SigLIP loaded. dimension={}", self.dimension)
+
+    def _tokenize(self, texts: list[str]) -> dict:
+        """SigLIP 文本必须 padding='max_length'（定长 64、无 attention mask 训练）。
+
+        用动态 padding=True 会让文本嵌入偏离训练分布，图文空间错位、检索接近随机。
+        """
+        inputs = self.processor(
+            text=texts, return_tensors="pt", padding="max_length", truncation=True
+        )
+        return {k: v.to(self.device) for k, v in inputs.items()}
 
     @torch.no_grad()
     def encode_image(self, image: ImageInput) -> np.ndarray:
@@ -76,9 +84,7 @@ class SigLIPEmbedding(EmbeddingService):
 
     @torch.no_grad()
     def encode_text(self, text: str) -> np.ndarray:
-        inputs = self.processor(
-            text=text, return_tensors="pt", padding=True, truncation=True
-        ).to(self.device)
+        inputs = self._tokenize([text])
         features = _as_tensor(self.model.get_text_features(**inputs)).cpu().numpy()
         return self.normalize(features).squeeze(0)
 
@@ -107,9 +113,6 @@ class SigLIPEmbedding(EmbeddingService):
     def encode_texts_batch(self, texts: list[str]) -> np.ndarray:
         if not texts:
             return np.empty((0, self.dimension), dtype=np.float32)
-        inputs = self.processor(
-            text=texts, return_tensors="pt", padding=True, truncation=True
-        )
-        inputs = {k: v.to(self.device) for k, v in inputs.items()}
+        inputs = self._tokenize(texts)
         features = _as_tensor(self.model.get_text_features(**inputs)).cpu().numpy()
         return self.normalize(features)
